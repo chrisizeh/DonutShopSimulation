@@ -18,7 +18,7 @@ def donut_generator_sugar_donut(env, donuts_interarrival_time, baking_machine,mi
 
     while True:
         #create instance of activity generator
-        bake = activity_generator_sugar_donut_production(env, baking_machine,mixing_machine, donut_number)
+        bake =  activity_generator_sugar_donut_production_new(env, baking_machine,mixing_machine, donut_number)
 
         #run the activity generator for this donut
         env.process(bake)
@@ -31,19 +31,26 @@ def donut_generator_sugar_donut(env, donuts_interarrival_time, baking_machine,mi
 
         donut_number+=1
 
+def activity_generator_sugar_donut_production_new(env, baking_machine, mixing_machine, donut_number):
+    global donuts_produced
+    yield env.process(mixing_machine.work(env, donut_number))
+    yield env.process(baking_machine.work(env, donut_number))
+    donuts_produced += 1
 
 
-def activity_generator_sugar_donut_production(env, baking_machine, mixing_machine, donut_number):
+
+def activity_generator_sugar_donut_production_alternative(env, baking_machine, mixing_machine, donut_number):
     baking_name=baking_machine.name
     mixing_name=mixing_machine.name
     time_entered_for_mixing = env.now
     global donuts_produced
 
     print(f"Donut {donut_number} entered {mixing_name} queue at {time_entered_for_mixing:.2f}")
+
     with mixing_machine.machine.request() as req:
         yield req
 
-        # calculate time donut was queuing
+        #calculate time donut was queuing
         time_left_queue_for_mixing = env.now
         print(f"Donut {donut_number} was transferred into {mixing_name}  at {time_left_queue_for_mixing:.2f}")
         time_in_queue_for_mixing = time_left_queue_for_mixing - time_entered_for_mixing
@@ -53,11 +60,9 @@ def activity_generator_sugar_donut_production(env, baking_machine, mixing_machin
         yield env.timeout(mixing_time)
 
     time_entered_for_baking = env.now
-
     print(f"Donut {donut_number} entered {baking_name} queue at {time_entered_for_baking:.2f}")
     with baking_machine.machine.request() as req:
         yield req
-
         # calculate time donut was queuing
         time_left_queue_for_baking = env.now
         print(f"Donut {donut_number} was transferred into {baking_name} at {time_left_queue_for_baking:.2f}")
@@ -66,7 +71,6 @@ def activity_generator_sugar_donut_production(env, baking_machine, mixing_machin
 
         baking_time = baking_machine.time
         yield env.timeout(baking_time)
-    # baking_machine.work(env, donut_number)
     print(f"Donut {donut_number} finished at {env.now:.2f}")
     donuts_produced +=1
 
@@ -95,6 +99,7 @@ env.process(donut_generator_sugar_donut(env, donut_spawn, baking_machine,mixing_
 
 #run the simulation
 env.run(until=Sim_duration)
+
 
 print(f"Total amount of {donuts_produced} donuts produced")
 

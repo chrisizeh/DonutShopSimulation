@@ -27,6 +27,7 @@ class Single_Machine:
             yield env.timeout(work_time)
 
 
+
 class Machine:
 
     def __init__(self, id, name, workTime):
