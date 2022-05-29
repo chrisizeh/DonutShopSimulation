@@ -1,53 +1,49 @@
 import simpy
 
 
-class Single_Machine:
-
-    def __init__(self, env, name, time, amount=1):
-        self.name = name
-        self.time = time
-        self.machine = simpy.Resource(env, amount)
-
-    def work(self, env, donut_number):
-        station = self.name
-        time_entered = env.now
-        print(f"Donut {donut_number} entered {station} queue at {time_entered:.2f}")
-        # request machine
-        with self.machine.request() as req:
-            # Freeze until machine is available
-            yield req
-            # calculate time donut was queuing
-            time_left_queue = env.now
-            print(f"Donut {donut_number} left {station} queue at {time_left_queue:.2f}")
-            time_in_queue = time_left_queue - time_entered
-            print(f"Donut {donut_number} was in {station} queue for {time_in_queue:.2f} minutes")
-
-            work_time = self.time
-
-            yield env.timeout(work_time)
-
-
-
 class Machine:
 
-    def __init__(self, id, name, workTime):
+    def __init__(self, env, name, workTime):
         self.name = name
         self.workTime = workTime
+        self.env = env
+        self.productInQueue = env.event()
 
         self.queue = []
 
+
+    # Add product to queue and inform machine
     def addProduct(self, product):
         self.queue.append(product)
+        self.productInQueue.succeed()
+        self.productInQueue = self.env.event()
 
-    def nextProduct(self):
+
+    # Get and return Next product from queue
+    def nextProductFromQueue(self):
         if (len(self.queue) > 0):
             current = self.queue.pop(0)
-            current.updateState()
-        else:
-            print('Nothing to do!')
+            return current
+
+
+    # Infinite process to handle products from queue in specified work time
+    # Inform product when task is completed
+    def run(self):
+        while True:
+            product = self.nextProductFromQueue()
+
+            if(product):
+                print('Time: ' + str(self.env.now) + '; Donut entered: (' + str(self) + ')')
+                yield self.env.timeout(self.workTime)
+                product.stepDone.succeed()
+                product.stepDone = self.env.event()
+            else:
+                yield self.productInQueue
+            
 
     def __repr__(self):
         return self.name
 
+
     def __str__(self):
-        return self.name + '; ' + str(self.workTime) + ' min; Queue: ' + str(self.queue)
+        return self.name + '; ' + str(self.workTime) + ' min; Queue Length: ' + str(len(self.queue))
