@@ -11,6 +11,9 @@ class Machine:
 
         self.queue = []
 
+    def reset(self, env):
+        self.queue = []
+        self.env = env
 
     # Add product to queue and inform machine
     def addProduct(self, product):

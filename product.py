@@ -42,6 +42,6 @@ class SugarDonut (Product):
 	def __init__(self, env, machines):
 		name = 'Sugar Donut'
 		cost = 1
-		recipe = [machines[1], machines[2], machines[3], machines[4]]
+		recipe = [machines[0], machines[1], machines[2], machines[3]]
 
 		super().__init__(env, name, cost, recipe)
